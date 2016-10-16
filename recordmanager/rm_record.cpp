@@ -32,7 +32,7 @@ int RM_Record::Set(char *pData, int size, RID rid_)
 	return 1;
 }
 
-int RM_Record::GetData(char *&pData) const 
+int RM_Record::GetData(char *&pData) const
 {
 //	while(1){
 //	}
@@ -43,17 +43,17 @@ int RM_Record::GetData(char *&pData) const
 		pData = data;
 		return 1;
 	}
-	else			 
+	else
 		return 0;
 }
 
-int RM_Record::GetRid(RID &rid) const 
+int RM_Record::GetRid(RID &rid) const
 {
 	if (data != NULL && recordSize != -1)
 	{
     		rid.Copy(this->rid);
     		return 1;
   	}
-	else 
+	else
 		return 0;
 }
