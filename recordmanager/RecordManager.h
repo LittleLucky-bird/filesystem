@@ -3,7 +3,7 @@
 
 #include "../fileio/FileManager.h"
 #include "../bufmanager/BufPageManager.h"
-#include "../common/RID.h"
+#include "RID.h"
 #include "PageHead.h"
 #include <cstring>
 #include <iostream>
@@ -26,13 +26,15 @@ public:
 	}
 
 	int Set(char *pData,int size,RID rid_){
-		if(recordSize != -1 && (size != recordSize))
+		if(recordSize != -1 && (size != recordSize)){
+			cout<<"xuebeng"<<endl;
 			return 0;
+		}
 		recordSize = size;
 	  	this->rid.Copy(rid_);
 		if (data == NULL){
 			data = new char[recordSize];
-			memset(data, 0, sizeof(data));
+			memset(data, 0, size);
 		}
 	  	memcpy(data, pData, size);
 		return 1;
@@ -60,17 +62,17 @@ public:
 	int recordNumber;//记录的总数
 
 	FileHead(int recordSize){
-		int pageHead = 96;
-		int emptyHead = 12;
-		int byteNumber = pageHead - emptyHead;
+		int pageHead = 88;
+		// int emptyHead = 12;
+		int byteNumber = 84;
 		int bitPerByte = 8;
-		int bitPerPage = 8196;
+		int bytePerPage = 8196;
 		this->recordSize = recordSize;
 		this->pageNumber = 0;
-		if (recordSize * byteNumber * bitPerByte <= (bitPerPage - pageHead))
+		if (recordSize * byteNumber * bitPerByte <= (bytePerPage - pageHead))
 			this->recordPerPage = byteNumber * bitPerByte;
 		else
-			this->recordPerPage = (bitPerPage - pageHead)/recordSize;
+			this->recordPerPage = (bytePerPage - pageHead)/recordSize;
 		this->recordNumber = 0;
 	}
 
@@ -87,7 +89,7 @@ private:
 
 
 public:
-	RM_FileHandle()：bpm(null),fileID(-1){}
+	RM_FileHandle():bpm(NULL),fileID(-1){}
 	RM_FileHandle(BufPageManager *bpm_,int fileID_){
 		Open(bpm_,fileID_);
 	}
@@ -107,27 +109,41 @@ public:
 		return fileID;
 	}
 
+	int getNumber() const{
+		return	fileHead->recordNumber;
+	}
+
 	int GetRec(const RID &rid,RM_Record &rec) const{
 		int page = rid.Page();
 		int slot = rid.Slot();
-		if (page > fileHead->pageNumber)
+		if (page > fileHead->pageNumber){
+			// cout<<page<<" "<<fileHead->pageNumber<<" ";
+			// cout<<"xuebeng1"<<endl;
 			return 0;
+		}
+		// cout<<page<<" "<<fileHead->pageNumber<<" "<<endl;
 		int index;
+		// cout<<page<<" "<<fileHead->pageNumber<<" "<<endl;
 		BufType b = bpm->getPage(fileID, page, index);
+		// cout<<page<<" "<<fileHead->pageNumber<<" "<<endl;
 		PageHead *head = (PageHead*)(b);
+		// cout<<page<<" "<<fileHead->pageNumber<<" "<<endl;
 		if (head->getRecordHead(slot))
 		{
 			char *data;
 			data = (char*)b;
-			data += 96 + recordSize * slot;
+			data += 88 + recordSize * slot;
 			rec.Set(data, recordSize, rid);
+			// cout<<page<<" "<<fileHead->pageNumber<<" "<<endl;
 			return 1;
 		}
-		else
+		else{
+			cout<<"xuebeng2"<<endl;
 			return 0;
+		}
 	}
 
-	int InsertRec(const char*pData,RID &rid){
+	int InsertRec(const char *pData,RID &rid){
 		int headindex, pageindex;
 		fileHead = (FileHead*)(bpm->getPage(fileID, 0, headindex));
 		bool ok = false;
@@ -143,7 +159,7 @@ public:
 					{
 						char *data;
 						data = (char*)b;
-						data += 96 + recordSize * j;
+						data += 88 + recordSize * j;
 						memcpy(data, pData, recordSize);
 						head->usedSlot++;
 						head->setRecordHead(j, true);
@@ -169,7 +185,7 @@ public:
 			char *data;
 			data = (char*)b;
 			memcpy(data, &head, sizeof(PageHead));
-			data += 96;
+			data += 88;
 			memcpy(data, pData, recordSize);
 			bpm->markDirty(pageindex);
 			rid = RID(pageid, 0);
@@ -180,7 +196,7 @@ public:
 		bpm->markDirty(headindex);
 		return ok;
 	}
-	
+
 	int DeleteRec(const RID &rid){
 		int page = rid.Page();
 		int slot = rid.Slot();
@@ -201,6 +217,7 @@ public:
 		}
 		return 0;
 	}
+
 	int UpdateRec(const RM_Record &rec){
 		RID rid;
 		rec.GetRid(rid);
@@ -215,7 +232,7 @@ public:
 		{
 			char *data;
 			data = (char*)b;
-			data += 96 + recordSize * slot;
+			data += 88 + recordSize * slot;
 			char *pdata;
 			rec.GetData(pdata);
 			memcpy(data, pdata, recordSize);
@@ -226,74 +243,58 @@ public:
 	}
 };
 
-class PFS{
-public:
-	int pageNumber;
-	char head[100];
-	char used[8088]; // 0-unused 1-used
-	PFS(){
-		pageNumber = 1;
-		for(int i=0;i<8088;i++)
-			used[i] = 0;
-	}
-	~PFS();
-};
-
-
-
 class RM_Manager
 {
+private:
 	FileManager* myFileManager;
 	BufPageManager* bpm;
+
 public:
 	RM_Manager(FileManager* pfm,BufPageManager* bpm){
 		myFileManager = pfm;
 		this->bpm = bpm;
 	}
+
 	~RM_Manager();
+
 	FileManager* getFileManager(){
 		return myFileManager;
 	}
-	~RM_Manager();
-	FileManager* getFileManager(){
-		return myFileManager;
-	}
+
 	BufPageManager* getBufPageManager(){
 		return bpm;
 	}
+
 	int CreateFile(const char *fileName,int recordSize){
 		int index;
 		int fileID;
 		int pageID = 0;
-		if(myFileManager = NULL){
+		if(myFileManager == NULL)
 			cout<<"file can't found"<<endl;
-		}
 		myFileManager->createFile(fileName);
 		myFileManager->openFile(fileName,fileID);
-		cout<<"fileID"<<fileID<<endl;
+		// cout<<"fileID"<<fileID<<endl;
 		BufType b = bpm->allocPage(fileID,pageID,index,false);
 		memset(b,0,8*1024);
 		bpm->markDirty(index);
-		cout<<"recordSize "<<recordSize<<endl;
+		// cout<<"recordSize "<<recordSize<<endl;
 		FileHead *newPage = new FileHead(recordSize);
 		memcpy(b,newPage,sizeof(FileHead));
-		cout<<"after memcpy"<<b[0]<<endl;
+		// cout<<"after memcpy"<<b[0]<<endl;
 		b = bpm->getPage(fileID,pageID,index);
-		cout<<"test page head"<<b[0]<<endl;
+		// cout<<"test page head"<<b[0]<<" "<<b[1]<<" "<<b[2]<<" "<<b[3]<<" "<<endl;
 		bpm->close();
 		myFileManager->closeFile(fileID);
 		return 0;
 	}
-	int DestroyFile(const char *fileName){
-		myFileManager->destroyFile(fileName);
-		return 0;
-	}
+
 	int OpenFile(const char *fileName,RM_FileHandle &fileHandle){
 		int fileID;
 		myFileManager->openFile(fileName,fileID);
 		fileHandle.Open(bpm,fileID);
 		return 0;
 	}
+
 	int CloseFile(RM_FileHandle &fileHandle){
 		int fileID = fileHandle.getFileID();
 		bpm->close();

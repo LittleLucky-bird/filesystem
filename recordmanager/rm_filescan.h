@@ -18,7 +18,7 @@ class RM_FileScan {
 	BufPageManager* bpm;
 	int recordSize;
 	int pageNumber;
-	
+
 	int fileID;
 	AttrType attrType;
 	int attrLength;
@@ -28,10 +28,11 @@ class RM_FileScan {
 
 	int currentPage;
 	int currentRecord;
-	
+
 	int indexNo;
 
-public:	bool condINT(int v1, int v2){
+public:
+  bool condINT(int v1, int v2){
 		switch(compOp) {
 			case EQ_OP: return v1 == v2;
 			case LT_OP: return v1 < v2;
@@ -148,45 +149,44 @@ public:	bool condINT(int v1, int v2){
 	RM_FileScan(FileManager *pfm, BufPageManager* bpm){
 		myFileManager = pfm;
 		this->bpm = bpm;
-	}                          
+	}
 	~RM_FileScan(){
 		myFileManager = NULL;
 		bpm = NULL;
-	}											
-    int OpenScan(const RM_FileHandle &fileHandle,  
+	}
+  int OpenScan(const RM_FileHandle &fileHandle,
                 AttrType attrType,
                 int attrLength,
                 int attrOffset,
                 CompOp compOp,
                 void *value,
-		int indexNo = -1,
-                ClientHint pinHint = NO_HINT){
-    	int index;
-		this->fileID = fileHandle.getFileID();
-		this->indexNo = indexNo;
-		if (bpm == NULL)
-			cout << "in RM_FileScan buffermannager is NULL" <<endl;
-    	BufType b = bpm->getPage(fileID, 0, index);
-    	recordSize = b[0];
-    	pageNumber = b[1];
-    	this->fileID = fileHandle.getFileID();
-    	this->attrType = attrType;
-    	this->attrLength = attrLength;
-    	this->attrOffset = attrOffset;
-    	this->compOp = compOp;
-    	this->value = value;
-    	currentPage = 1;
-    	currentRecord = 0;
-	cout << this->compOp << compOp <<  endl;
-	if (this->compOp == 7)
-		return 1;
-    	if(attrType < MyINT || attrType > STRING || compOp < EQ_OP || compOp > NO_OP) 
-    		return 0;
-    	if((attrType == STRING && attrLength < 0))
-    		return 0;
-    	if((attrOffset + attrLength) > recordSize)
-    		return 0;
-    	return 1;
+	              int indexNo = -1){
+      int index;
+      this->fileID = fileHandle.getFileID();
+      this->indexNo = indexNo;
+      if (bpm == NULL)
+      cout << "in RM_FileScan buffermannager is NULL" <<endl;
+      BufType b = bpm->getPage(fileID, 0, index);
+      recordSize = b[0];
+      pageNumber = b[1];
+      this->fileID = fileHandle.getFileID();
+      this->attrType = attrType;
+      this->attrLength = attrLength;
+      this->attrOffset = attrOffset;
+      this->compOp = compOp;
+      this->value = value;
+      currentPage = 1;
+      currentRecord = 0;
+      cout << this->compOp << compOp <<  endl;
+      if (this->compOp == 7)
+        return 1;
+      if(attrType < MyINT || attrType > STRING || compOp < EQ_OP || compOp > NO_OP)
+      	return 0;
+      if((attrType == STRING && attrLength < 0))
+      	return 0;
+      if((attrOffset + attrLength) > recordSize)
+      	return 0;
+      return 1;
     }
 
     int GetNextRec(RM_Record &rec){	 // Get next matching record
