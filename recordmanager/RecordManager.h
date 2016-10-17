@@ -3,20 +3,49 @@
 
 #include "../fileio/FileManager.h"
 #include "../bufmanager/BufPageManager.h"
-#include "../common/common/.h"
+#include "../common/RID.h"
 #include "PageHead.h"
 #include <cstring>
 #include <iostream>
 
 class RM_Record{
 public:
-	RM_Record();
-	RM_Record();
+	RM_Record():recordSize(-1), data(NULL), rid(-1, -1){}
+	~RM_Record(){
+		if (data != NULL)
+			delete [] data;
+	}
 
-	int GetData(char *&pData) const;
-	int Set(char *pData,int size,RID rid_);
+	int GetData(char *&pData) const{
+		if (data != NULL && recordSize != -1){
+			pData = data;
+			return 1;
+		}
+		else
+			return 0;
+	}
 
-	int GetRid(RID &rid) const;
+	int Set(char *pData,int size,RID rid_){
+		if(recordSize != -1 && (size != recordSize))
+			return 0;
+		recordSize = size;
+	  	this->rid.Copy(rid_);
+		if (data == NULL){
+			data = new char[recordSize];
+			memset(data, 0, sizeof(data));
+		}
+	  	memcpy(data, pData, size);
+		return 1;
+	}
+
+	int GetRid(RID &rid) const{
+		if (data != NULL && recordSize != -1){
+			rid.Copy(this->rid);
+			return 1;
+	  }
+		else
+			return 0;
+	}
 
 	int recordSize;
 	char *data;
@@ -29,6 +58,7 @@ public:
 	int pageNumber;//页的个数
 	int recordPerPage;//每页记录的个数
 	int recordNumber;//记录的总数
+
 	FileHead(int recordSize){
 		int pageHead = 96;
 		int emptyHead = 12;
@@ -37,22 +67,25 @@ public:
 		int bitPerPage = 8196;
 		this->recordSize = recordSize;
 		this->pageNumber = 0;
-		if(recordSize*byteNumber*bitPerByte <(bitPerByte - pageHead)){
-			this ->recordPerPage = byteNumber * bitPerByte;
-		}
-		else 
+		if (recordSize * byteNumber * bitPerByte <= (bitPerPage - pageHead))
+			this->recordPerPage = byteNumber * bitPerByte;
+		else
 			this->recordPerPage = (bitPerPage - pageHead)/recordSize;
 		this->recordNumber = 0;
 	}
+
 };
 
 class RM_FileHandle{
+
 private:
 	BufPageManager *bpm;
 	int fileID;
 	FileHead *fileHead;
 	int recordSize;
 	int recordPerPage;
+
+
 public:
 	RM_FileHandle()：bpm(null),fileID(-1){}
 	RM_FileHandle(BufPageManager *bpm_,int fileID_){
@@ -93,6 +126,7 @@ public:
 		else
 			return 0;
 	}
+
 	int InsertRec(const char*pData,RID &rid){
 		int headindex, pageindex;
 		fileHead = (FileHead*)(bpm->getPage(fileID, 0, headindex));
@@ -146,6 +180,7 @@ public:
 		bpm->markDirty(headindex);
 		return ok;
 	}
+	
 	int DeleteRec(const RID &rid){
 		int page = rid.Page();
 		int slot = rid.Slot();
@@ -203,6 +238,8 @@ public:
 	}
 	~PFS();
 };
+
+
 
 class RM_Manager
 {

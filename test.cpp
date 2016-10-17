@@ -2,7 +2,9 @@
 #include "common/RID.h"
 
 int main(int argc, char const *argv[]) {
-  RID X(1,2);
-  std::cout<<X;
+  char a = 0;
+  for (int i = 0; i < 128; i++) {
+    std::cout << a++ <<" "<<i<< std::endl;
+  }
   return 0;
 }

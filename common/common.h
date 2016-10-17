@@ -1,7 +1,7 @@
 
 
-#ifndef COMMON_COMMON_H_
-#define COMMON_COMMON_H_
+#ifndef COMMON_RID_H_
+#define COMMON_RID_H_
 
 enum AttrType {
     MyINT,
