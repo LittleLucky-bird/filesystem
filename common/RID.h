@@ -1,9 +1,4 @@
-/*
- * common.h
- *
- *  Created on: Dec 23, 2015
- *      Author: thomas
- */
+
 
 #ifndef COMMON_COMMON_H_
 #define COMMON_COMMON_H_
@@ -76,7 +71,7 @@ private:
 	int slot;
 };
 
-inline ostream& operator <<(ostream & os, const RID& r)
+inline std::ostream& operator <<(std::ostream & os, const RID& r)
 {
 	int p, s;
 	r.GetPageNum(p);

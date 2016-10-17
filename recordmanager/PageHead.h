@@ -10,10 +10,10 @@ public:
 	char slotMap[84];//84个byte每一个bit对应之后每个槽的状态。（0为空，1为有记录）
 	PageHead(){
 		usedSlot = 0;
-		memset(slotMap,0,sizeif(slotMap));
+		memset(slotMap,0,sizeof(slotMap));
 	}
-	bool getRecordHead(int RecordID){
-		char Record slotMap[RecordID >> 3];
+	bool getRecordHead(int RecordID){//判断是否有记录，有返回true
+		char Record = slotMap[RecordID >> 3];
 		return (Record >> (7 - (RecordID%8))) % 2;
 	}
 	int setRecordHead(int RecordID,bool IsRecord){
